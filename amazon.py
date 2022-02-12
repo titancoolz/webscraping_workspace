@@ -18,8 +18,8 @@ from selenium.common.exceptions import NoSuchElementException
     Step7: Close the browser
     Step8: Write all the product's information in the product record list in the spreadsheet
 """
-
-
+"""TODO Title	Description	Category	spl_price	price	url	Gender	Sub_Goal	
+Goal	Avg. Rating	Total Ratings Count	Total Review count	upload date/Date First Available	Page	Ad or not?"""
 class AmazonProductScraper:
     def __init__(self):
         self.driver = None
@@ -74,6 +74,12 @@ class AmazonProductScraper:
         temp_record = []
         for i in range(len(page_results)):
             item = page_results[i]
+            ko=item.text
+            # print(ko)
+            Sponsored=False
+            if("Sponsored" in ko):
+                Sponsored=True
+
 
             # Find the a tag of the item
             a_tag_item = item.h2.a
@@ -90,6 +96,11 @@ class AmazonProductScraper:
                 product_price = product_price_location.find('span', 'a-offscreen').text
             except AttributeError:
                 product_price = "N/A"
+            try:
+                Original_product_price_location = item.find('span', 'a-price a-text-price')
+                Original_product_price = Original_product_price_location.find('span', 'a-offscreen').text
+            except AttributeError:
+                Original_product_price = "N/A"
 
             # Get product reviews
             try:
@@ -99,12 +110,12 @@ class AmazonProductScraper:
 
             # Get number of reviews
             try:
-                review_number = item.find('span', {'class': 'a-size-base'}).text
+                review_number = item.find('span', {'class': 'a-size-base s-underline-text'}).text
             except AttributeError:
                 review_number = "N/A"
 
             # Store the product information in a tuple
-            product_information = (description,  product_price[1:], product_review, review_number, category_url)
+            product_information = (description, Original_product_price[1:], product_price[1:], product_review, review_number, category_url, Sponsored)
 
             # Store the information in a temporary record
             temp_record.append(product_information)
@@ -127,7 +138,8 @@ class AmazonProductScraper:
             max_number_of_pages = "//li[@class='a-normal'][last()]"
             number_of_pages = self.driver.find_element_by_xpath(max_number_of_pages)
 
-        for i in range(2, int(number_of_pages.text)+1):
+        # for i in range(2, int(number_of_pages.text)+1):
+        for i in range(2, 3):
             # Goes to next page
             next_page_url = category_url+ "&page=" + str(i)
             self.driver.get(next_page_url)
@@ -159,7 +171,9 @@ class AmazonProductScraper:
             file_name = "{}_{}.csv".format(self.category_name, today)
             f = open(file_name, "w", newline='', encoding='utf-8')
             writer = csv.writer(f)
-            writer.writerow(['Description', 'Price', 'Rating', 'Review Count', 'Product URL'])
+            writer.writerow(['Description', 'original Price', 'discounted Price', 'Rating', 'Review Count', 'Product URL', 'Ad or not?' ])
+            #todo Description	Category	spl_price	price	url		Avg. Rating,	Total Ratings Count,	Total Review count	,upload date/Date First Available,	Page	Ad or not?
+
             writer.writerows(records)
             f.close()
 
